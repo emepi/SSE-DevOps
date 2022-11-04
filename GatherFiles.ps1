@@ -24,7 +24,7 @@ function CopyFilteredGameFiles {
         $_.Name -Match $Regex
     } | ForEach-Object {
         #Preserve relative paths of the game folder.
-        $TargetPath = $Target + ($_.DirectoryName.Remove(0, $build.skyrimPath.Length + 1))
+        $TargetPath = $Target + $_.DirectoryName.Remove(0, $Build.skyrimPath.Length)
 
         #Copy the matched files and make related directories.
         $_ | Copy-Item -Destination (New-Item -Force -Type Directory -Path $TargetPath)
@@ -34,7 +34,7 @@ function CopyFilteredGameFiles {
 <# Recursive function to filter and copy relevant files in tracked files tree. #>
 function GatherTrackedFiles {
     param (
-        $TrackedFilesTree, #TrackedFiles object from build.json or equivalent.
+        $TrackedFilesTree, #TrackedFiles object from Build.json or equivalent.
         $ParentFilters,    #Collection of inherited file filters.
         $FilePath          #Filepath matching the TrackedFilesTree node.
     )
@@ -60,11 +60,15 @@ function GatherTrackedFiles {
         GatherTrackedFiles $_.value $ParentFilters ($FilePath + "/" + $_.Name)
     }
 
+    #Custom file destination.
+    $Destination = if ($CurrentFolder.destination) {$CurrentFolder.destination} else {$Build.trackedFiles.destination}
+    $Destination = $Destination.trimEnd("/")
+
     #File search for private filters.
     if ($CurrentFolder.files) {
         $Regex = $CurrentFolder.files -join "|"
 
-        CopyFilteredGameFiles $Regex $FilePath $false "target/"
+        CopyFilteredGameFiles $Regex $FilePath $false $Destination
     }
 
     #File search for inherited filters.
@@ -72,18 +76,22 @@ function GatherTrackedFiles {
         $Regex = $ParentFilters -join "|"
 
         #Filter subfolders if a leaf node.
-        CopyFilteredGameFiles $Regex $FilePath $($ChildNodes.Length -eq 0) "target/"
+        CopyFilteredGameFiles $Regex $FilePath $($ChildNodes.Length -eq 0) $Destination
     }
 }
 
 <# Run the script with build.json configurations. #>
-
-$build = (Get-Content "build.json" -Raw) | ConvertFrom-Json
+$Build = (Get-Content "build.json" -Raw) | ConvertFrom-Json
 
 #Trim a trailing slash from the file path if present.
-$build.skyrimPath = $build.skyrimPath.trimEnd("/")
+$Build.skyrimPath = $Build.skyrimPath.trimEnd("/")
 
-if ($build.trackedFiles)
+#Default to current folder if destination is not set.
+if (!$Build.trackedFiles.destination) {
+    $Build.trackedFiles | Add-Member -MemberType NoteProperty -Name destination -Value "."
+}
+
+if ($Build.trackedFiles)
 {
-    GatherTrackedFiles $build.trackedFiles ([System.Collections.ArrayList]::new()) $build.skyrimPath
+    GatherTrackedFiles $Build.trackedFiles ([System.Collections.ArrayList]::new()) $Build.skyrimPath
 }
