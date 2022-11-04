@@ -1,0 +1,23 @@
+{
+    "skyrimPath": "C:/Program Files (x86)/Steam/steamapps/common/Skyrim Special Edition",
+    "trackedFiles": {
+        "comment": "Example file. Any location in the skyrim game folder may be referred here:",
+
+        "Data": {
+            "comment": "Files array may be used to track files inside the folder reference with regex keywords.",
+            "files": ["Skyrim.esm", "^ccbgssse\\d\\d\\d-pet"],
+
+            "Scripts": {
+                "comment": "Include array will also track matching files in the sub-folders",
+                "include": ["Armor", "Ammo", "weapon"]
+            },
+            "Meshes": {
+                "Armor": {
+                    "elven": {
+                        "include": ["(?s).*"]
+                    }
+                }
+            }
+        }
+    }
+}
