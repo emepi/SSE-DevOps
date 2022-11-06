@@ -1,8 +1,9 @@
 ﻿<# Script to fetch files from skyrim game directory with configurable json-file.
  #
  # Authors: Elmeri Kemppainen (emepi)
- # Date: 4-11-2022
+ # Date: 6-11-2022
  #>
+. ./Util/Get-ModBuild.ps1
 
 
 function Search-SSEFiles {
@@ -81,17 +82,9 @@ function Import-SSEProject {
 }
 
 <# Run the script with build.json configurations. #>
-$Build = (Get-Content "build.json" -Raw) | ConvertFrom-Json
+$Build = Get-ModBuild
 
-#Trim a trailing slash from the file path if present.
-$Build.skyrimPath = $Build.skyrimPath.trimEnd("/")
-
-#Default to current folder if destination is not set.
-if (!$Build.trackedFiles.destination) {
-    $Build.trackedFiles | Add-Member -MemberType NoteProperty -Name destination -Value "."
-}
-
-if ($Build.trackedFiles)
+if ($null -ne $Build -and $Build.trackedFiles)
 {
     Import-SSEProject $Build.trackedFiles ([System.Collections.ArrayList]::new()) $Build.skyrimPath
 }
