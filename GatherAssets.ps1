@@ -5,7 +5,7 @@
  #>
 
 
-function CopyFilteredGameFiles {
+function Search-SSEFiles {
     param(
         $Regex,             #Regex for filtering.
         $FilePath,          #Search location.
@@ -32,7 +32,7 @@ function CopyFilteredGameFiles {
 }
 
 <# Recursive function to filter and copy relevant files in tracked files tree. #>
-function GatherTrackedFiles {
+function Import-SSEProject {
     param (
         $TrackedFilesTree, #TrackedFiles object from Build.json or equivalent.
         $ParentFilters,    #Collection of inherited file filters.
@@ -57,7 +57,7 @@ function GatherTrackedFiles {
         $null -ne $_.Value -and [System.Management.Automation.PSCustomObject] -eq $_.Value.GetType()
     }
     $ChildNodes | ForEach-Object {
-        GatherTrackedFiles $_.value $ParentFilters ($FilePath + "/" + $_.Name)
+        Import-SSEProject $_.value $ParentFilters ($FilePath + "/" + $_.Name)
     }
 
     #Custom file destination.
@@ -68,7 +68,7 @@ function GatherTrackedFiles {
     if ($CurrentFolder.files) {
         $Regex = $CurrentFolder.files -join "|"
 
-        CopyFilteredGameFiles $Regex $FilePath $false $Destination
+        Search-SSEFiles $Regex $FilePath $false $Destination
     }
 
     #File search for inherited filters.
@@ -76,7 +76,7 @@ function GatherTrackedFiles {
         $Regex = $ParentFilters -join "|"
 
         #Filter subfolders if a leaf node.
-        CopyFilteredGameFiles $Regex $FilePath $($ChildNodes.Length -eq 0) $Destination
+        Search-SSEFiles $Regex $FilePath $($ChildNodes.Length -eq 0) $Destination
     }
 }
 
@@ -93,5 +93,5 @@ if (!$Build.trackedFiles.destination) {
 
 if ($Build.trackedFiles)
 {
-    GatherTrackedFiles $Build.trackedFiles ([System.Collections.ArrayList]::new()) $Build.skyrimPath
+    Import-SSEProject $Build.trackedFiles ([System.Collections.ArrayList]::new()) $Build.skyrimPath
 }
