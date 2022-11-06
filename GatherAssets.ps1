@@ -3,8 +3,10 @@
  # Authors: Elmeri Kemppainen (emepi)
  # Date: 6-11-2022
  #>
-. ./Util/Get-ModBuild.ps1
 
+#imports
+$ParentDirection = Split-Path $MyInvocation.MyCommand.Path
+. $ParentDirection/Util/Get-ModBuild.ps1
 
 function Search-SSEFiles {
     param(
